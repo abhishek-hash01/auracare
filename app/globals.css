@@ -4,10 +4,13 @@
   :root {
     --aura-bg: #F5EFE6;
     --aura-surface: #FAF7F2;
+    --aura-surface-2: #F0E8DC;
     --aura-accent: #8B6F47;
     --aura-accent-light: #B89A72;
+    --aura-accent-pale: rgba(139, 111, 71, 0.12);
+    --aura-rose: #C0856A;
     --aura-text: #2F2A24;
-    --aura-text-muted: #6B5F52;
+    --aura-text-muted: #7A6E63;
     --aura-border: #E8DDD0;
     --aura-glow: rgba(139, 111, 71, 0.3);
   }
@@ -25,10 +28,11 @@
   body {
     background-color: var(--aura-bg);
     color: var(--aura-text);
-    font-family: 'DM Sans', 'Inter', sans-serif;
+    font-family: var(--font-dm-sans, 'DM Sans', 'Inter', sans-serif);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100dvh;
+    overflow-x: hidden;
   }
 
   ::selection {
@@ -37,61 +41,315 @@
   }
 }
 
-/* Mic pulse animation */
-@keyframes mic-pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0px var(--aura-glow);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 18px rgba(139, 111, 71, 0.0);
-  }
-}
+/* ─── Ambient background blobs ─── */
+@keyframes blob-drift-1 {
 
-/* Glow ring animation */
-@keyframes glow-ring {
-  0% {
-    box-shadow: 0 0 0 0px rgba(139, 111, 71, 0.35);
-  }
-  70% {
-    box-shadow: 0 0 0 24px rgba(139, 111, 71, 0.0);
-  }
+  0%,
   100% {
-    box-shadow: 0 0 0 0px rgba(139, 111, 71, 0.0);
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(40px, -30px) scale(1.08);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
   }
 }
 
-/* Fade in up */
+@keyframes blob-drift-2 {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  40% {
+    transform: translate(-50px, 30px) scale(1.05);
+  }
+
+  70% {
+    transform: translate(30px, -20px) scale(0.97);
+  }
+}
+
+@keyframes blob-drift-3 {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(25px, 40px) scale(1.06);
+  }
+}
+
+/* ─── Mic ring animations ─── */
+@keyframes ring-pulse-1 {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.18;
+  }
+
+  50% {
+    transform: scale(1.12);
+    opacity: 0.08;
+  }
+}
+
+@keyframes ring-pulse-2 {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.12;
+  }
+
+  50% {
+    transform: scale(1.18);
+    opacity: 0.04;
+  }
+}
+
+@keyframes ring-pulse-3 {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.07;
+  }
+
+  50% {
+    transform: scale(1.25);
+    opacity: 0.02;
+  }
+}
+
+@keyframes waveform-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+
+  80% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+/* ─── Core animations ─── */
+@keyframes mic-breathe {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 8px 32px rgba(139, 111, 71, 0.35);
+  }
+
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 12px 48px rgba(139, 111, 71, 0.5);
+  }
+}
+
+/* Slow idle breath — 5s cycle, subconsciously regulates user breathing */
+@keyframes mic-idle-breathe {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.022);
+  }
+}
+
+@keyframes waveform {
+  0% {
+    transform: scaleY(0.35);
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-/* Dot bounce for loading */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes dot-bounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-  40% { transform: translateY(-6px); opacity: 1; }
+
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+
+  40% {
+    transform: translateY(-7px);
+    opacity: 1;
+  }
 }
 
-.animate-mic-pulse {
-  animation: mic-pulse 2s ease-in-out infinite;
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
 }
 
-.animate-glow-ring {
-  animation: glow-ring 1.6s ease-out infinite;
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── Utility classes ─── */
+.animate-blob-1 {
+  animation: blob-drift-1 18s ease-in-out infinite;
+}
+
+.animate-blob-2 {
+  animation: blob-drift-2 22s ease-in-out infinite;
+}
+
+.animate-blob-3 {
+  animation: blob-drift-3 26s ease-in-out infinite;
+}
+
+.animate-ring-1 {
+  animation: ring-pulse-1 3s ease-in-out infinite;
+}
+
+.animate-ring-2 {
+  animation: ring-pulse-2 3s ease-in-out infinite 0.5s;
+}
+
+.animate-ring-3 {
+  animation: ring-pulse-3 3s ease-in-out infinite 1s;
+}
+
+.animate-mic-breathe {
+  animation: mic-breathe 2.2s ease-in-out infinite;
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up 0.4s ease-out forwards;
+  animation: fade-in-up 0.5s ease-out forwards;
 }
 
-.dot-1 { animation: dot-bounce 1.2s ease-in-out infinite 0s; }
-.dot-2 { animation: dot-bounce 1.2s ease-in-out infinite 0.2s; }
-.dot-3 { animation: dot-bounce 1.2s ease-in-out infinite 0.4s; }
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.dot-1 {
+  animation: dot-bounce 1.2s ease-in-out infinite 0s;
+}
+
+.dot-2 {
+  animation: dot-bounce 1.2s ease-in-out infinite 0.2s;
+}
+
+.dot-3 {
+  animation: dot-bounce 1.2s ease-in-out infinite 0.4s;
+}
+
+/* Staggered entrance delays */
+.delay-100 {
+  animation-delay: 0.1s;
+  opacity: 0;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+  opacity: 0;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+  opacity: 0;
+}
+
+.delay-500 {
+  animation-delay: 0.5s;
+  opacity: 0;
+}
+
+.delay-600 {
+  animation-delay: 0.6s;
+  opacity: 0;
+}
+
+.delay-700 {
+  animation-delay: 0.7s;
+  opacity: 0;
+}
+
+.delay-900 {
+  animation-delay: 0.9s;
+  opacity: 0;
+}
+
+/* Shimmer gradient text */
+.text-shimmer {
+  background: linear-gradient(90deg,
+      var(--aura-accent) 0%,
+      var(--aura-accent-light) 40%,
+      var(--aura-accent) 60%,
+      var(--aura-accent-light) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s linear infinite;
+}
+
+/* Dashed orbit ring */
+.orbit-ring {
+  border: 1.5px dashed var(--aura-border);
+  border-radius: 50%;
+  animation: spin-slow 30s linear infinite;
+}
