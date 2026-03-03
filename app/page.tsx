@@ -86,18 +86,8 @@ export default function HomePage() {
 
       {/* ─── Header ─── */}
       <header className="relative z-20 w-full flex justify-between items-center px-6 pt-6 pb-4 animate-fade-in">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #A07848, #7A5C34)" }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width={12} height={12} viewBox="0 0 24 24"
-              fill="none" stroke="white" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-              <rect x="9" y="2" width="6" height="11" rx="3" />
-              <path d="M19 10a7 7 0 01-14 0" />
-            </svg>
-          </div>
-          <span className="text-sm font-semibold tracking-[0.18em] uppercase"
-            style={{ color: "var(--aura-accent)" }}>AuraCare</span>
-        </div>
+        <span className="text-sm font-semibold tracking-[0.18em] uppercase"
+          style={{ color: "var(--aura-accent)" }}>AuraCare</span>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-500"
           style={{
             background: isListening ? "rgba(192,133,106,0.12)" : "rgba(250,247,242,0.85)",

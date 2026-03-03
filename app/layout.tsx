@@ -19,6 +19,10 @@ export const metadata: Metadata = {
   description:
     "AuraCare is a voice-only AI emotional support companion. Talk it out, I'm listening.",
   keywords: ["emotional support", "AI companion", "mental wellness", "voice AI"],
+  icons: {
+    icon: "/auracare.png",
+    apple: "/auracare.png",
+  },
   openGraph: {
     title: "AuraCare — Your Voice Companion",
     description: "Talk it out. I'm listening.",
