@@ -113,12 +113,12 @@ async function classifyInput(transcript: string): Promise<Classification> {
 Return ONLY a valid JSON object with no markdown formatting.
 {
  "risk_level": 1 | 2 | 3,
- "emotion": "sadness | anxiety | anger | confusion | stress | neutral"
+ "emotion": "sadness | anxiety | anger | confusion | stress | neutral | excitement | happiness"
 }
 Risk level guide:
-1 = Normal emotional expression
-2 = Distress or emotional vulnerability
-3 = Self-harm ideation, extreme crisis, or danger to self/others`;
+1 = Normal emotional expression OR discussing fictional characters, movies, books, or media, even if the fictional themes are violent or dark.
+2 = Real-life distress or emotional vulnerability.
+3 = ACTUAL real-life self-harm ideation, extreme crisis, or real danger to self/others. Do NOT flag as 3 if the user is clearly talking about fictional media or characters.`;
 
     const groq = new Groq({ apiKey: GROQ_API_KEY });
 
