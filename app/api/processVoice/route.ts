@@ -36,6 +36,14 @@ export async function POST(req: NextRequest) {
         const classification = await classifyInput(transcript);
         const { risk_level, emotion } = classification;
 
+        let summary = "";
+        const memoryLimit = MAX_MEMORY_EXCHANGES * 2;
+        if (messages.length > memoryLimit) {
+            const olderMessages = messages.slice(0, messages.length - memoryLimit);
+            summary = await summarizeHistory(olderMessages);
+            console.log("Generated History Summary:", summary);
+        }
+
         let responseText = "";
 
         if (risk_level === 3) {
@@ -43,7 +51,7 @@ export async function POST(req: NextRequest) {
             responseText = safetyOverride();
         } else {
             // 3. Construct prompt with limited memory
-            const prompt = buildPrompt(transcript, tone, emotion, messages);
+            const prompt = buildPrompt(transcript, tone, emotion, messages, summary);
 
             // 4. Generate empathetic response
             responseText = await generateResponse(prompt);
@@ -140,8 +148,34 @@ Risk level guide:
         return { risk_level: 1, emotion: "neutral" };
     }
 }
+async function summarizeHistory(messages: Message[]): Promise<string> {
+    if (!messages || messages.length === 0) return "";
 
-function buildPrompt(transcript: string, tone: string, emotion: string, messages: Message[]): any[] {
+    const GROQ_API_KEY = process.env.GROQ_API_KEY?.trim();
+    if (!GROQ_API_KEY) return "";
+
+    const groq = new Groq({ apiKey: GROQ_API_KEY });
+    const dialogue = messages.map(m => `${m.role}: ${m.content}`).join("\n");
+
+    try {
+        const chatCompletion = await groq.chat.completions.create({
+            model: "llama-3.1-8b-instant",
+            messages: [
+                { role: "system", content: "Summarize the emotional state of the user, key facts discussed, and main topics from this conversation history in exactly 2-3 short bullet points. Be extremely concise. Do not include pleasantries." },
+                { role: "user", content: dialogue }
+            ],
+            temperature: 0.3,
+            max_tokens: 100,
+        });
+
+        return chatCompletion.choices[0]?.message?.content || "";
+    } catch (e) {
+        console.error("Failed to summarize history:", e);
+        return "";
+    }
+}
+
+function buildPrompt(transcript: string, tone: string, emotion: string, messages: Message[], summary: string): any[] {
     const memoryLimit = MAX_MEMORY_EXCHANGES * 2; // user + assistant pairs
     const recentMessages = messages.slice(-memoryLimit);
 
@@ -165,7 +199,9 @@ CRITICAL RULES:
 5. DO NOT use abbreviations (write "for real" not "fr", "I don't know" not "idk") because the voice engine will mispronounce them.
 6. KEEP IT RELATIVELY SHORT. Your responses MUST be under 50 words total.
 7. If the user speech seems like pure random gibberish or a translation error, just gently pivot the conversation or ask a simple question.
-8. Speak directly and concisely without any markdown, asterisks, or emojis. Output only in the English/Latin alphabet.`;
+8. Speak directly and concisely without any markdown, asterisks, or emojis. Output only in the English/Latin alphabet.
+
+${summary ? `PREVIOUS CONTEXT SUMMARY:\n${summary}` : ""}`;
 
     const apiMessages: any[] = [
         { role: "system", content: systemPrompt }

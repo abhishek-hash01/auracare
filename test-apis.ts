@@ -23,7 +23,7 @@ async function testTTS() {
         const response = await client.textToSpeech.convert({
             text: "Hello, this is a test.",
             target_language_code: "hi-IN",
-            speaker: "meera"
+            speaker: "anushka" as any
         });
 
         console.log("TTS Success, response keys:", Object.keys(response || {}));
