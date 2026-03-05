@@ -216,14 +216,13 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ─── Footer (only when no messages) ─── */}
-      {!hasMessages && (
-        <footer className="relative z-10 w-full flex justify-center pb-4 mt-auto">
-          <p className="text-xs" style={{ color: "var(--aura-text-muted)", opacity: 0.28 }}>
-            AuraCare · Voice-only · Safe &amp; private
-          </p>
-        </footer>
-      )}
+      {/* ─── Footer ─── */}
+      <footer className="relative z-10 w-full flex flex-col items-center justify-center pb-24 mt-auto px-6 text-center">
+        <p className="text-[11px] font-medium max-w-sm leading-relaxed" style={{ color: "var(--aura-text-muted)", opacity: 0.75 }}>
+          AuraCare is not a medical professional and does not provide medical advice.
+          If you're experiencing a crisis please contact a licensed professional.
+        </p>
+      </footer>
 
       {/* ─── Fixed floating mic FAB ─── */}
       <div

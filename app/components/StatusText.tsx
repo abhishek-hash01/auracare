@@ -35,7 +35,10 @@ export default function StatusText({ appState }: StatusTextProps) {
 
     const getText = () => {
         if (appState === "listening") return LISTENING_PHRASES[phraseIndex];
-        if (appState === "processing") return PROCESSING_TEXT;
+        if (appState === "transcribing") return "Transcribing...";
+        if (appState === "understanding") return "Understanding...";
+        if (appState === "responding") return "Responding...";
+        if (appState === "processing") return "Processing...";
         if (appState === "responded") return "Tap to speak again";
         return "Tap to begin";
     };

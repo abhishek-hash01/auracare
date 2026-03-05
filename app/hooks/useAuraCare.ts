@@ -1,34 +1,84 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { Message, ToneLevel } from "../types";
 
-export type AppState = "idle" | "listening" | "processing" | "responded";
+export type AppState = "idle" | "listening" | "transcribing" | "understanding" | "responding" | "processing" | "responded";
 
 export function useAuraCare() {
     const [appState, setAppState] = useState<AppState>("idle");
     const [selectedTone, setSelectedTone] = useState<ToneLevel>("balanced");
     const [messages, setMessages] = useState<Message[]>([]);
 
-    const isListening = appState === "listening";
-    const isProcessing = appState === "processing";
+    const mediaRecorder = useRef<MediaRecorder | null>(null);
+    const audioChunks = useRef<Blob[]>([]);
+    const currentAudio = useRef<HTMLAudioElement | null>(null);
+    const maxRecordTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const startListening = useCallback(() => {
-        setAppState("listening");
+    const isListening = appState === "listening";
+    const isProcessing = ["transcribing", "understanding", "responding", "processing"].includes(appState);
+
+    const startListening = useCallback(async () => {
+        try {
+            if (currentAudio.current) {
+                currentAudio.current.pause();
+                currentAudio.current = null;
+            }
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const options = { mimeType: "audio/webm;codecs=opus" };
+            const recorder = new MediaRecorder(stream, MediaRecorder.isTypeSupported(options.mimeType) ? options : undefined);
+
+            mediaRecorder.current = recorder;
+            audioChunks.current = [];
+
+            recorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunks.current.push(event.data);
+                }
+            };
+
+            recorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks.current, { type: recorder.mimeType || "audio/webm" });
+                await _processAudioBlob(audioBlob, selectedTone, messages, setAppState, setMessages, currentAudio);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            recorder.start();
+            setAppState("listening");
+
+            // Sarvam STT has a strict 30-second limit. Enforce a 29s auto-stop.
+            if (maxRecordTimer.current) clearTimeout(maxRecordTimer.current);
+            maxRecordTimer.current = setTimeout(() => {
+                if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
+                    mediaRecorder.current.stop();
+                }
+            }, 29000);
+        } catch (error) {
+            console.error("Error accessing microphone:", error);
+            setAppState("idle");
+        }
+    }, [selectedTone, messages]);
+
+    const stopListening = useCallback(() => {
+        if (appState !== "listening" || !mediaRecorder.current) return;
+        if (maxRecordTimer.current) clearTimeout(maxRecordTimer.current);
+        mediaRecorder.current.stop();
+        // The processAudioBlob is triggered in onstop
+    }, [appState]);
+
+    const processPrompt = useCallback(async (prompt: string) => {
+        // Direct processing skipped. In a real scenario we could send text directly.
+        // Left empty as it's primarily used for simulated actions/demos.
     }, []);
 
-    const stopListening = useCallback(async () => {
-        if (appState !== "listening") return;
-        await _processText("I've been feeling a bit overwhelmed lately.", setAppState, setMessages, selectedTone);
-    }, [appState, selectedTone]);
-
-    /** Direct processing — skips the listening state entirely (used for tapped prompts) */
-    const processPrompt = useCallback(async (prompt: string) => {
-        if (appState === "listening" || appState === "processing") return;
-        await _processText(prompt, setAppState, setMessages, selectedTone);
-    }, [appState, selectedTone]);
-
-    const resetToIdle = useCallback(() => setAppState("idle"), []);
+    const resetToIdle = useCallback(() => {
+        setAppState("idle");
+        if (maxRecordTimer.current) clearTimeout(maxRecordTimer.current);
+        if (currentAudio.current) {
+            currentAudio.current.pause();
+            currentAudio.current = null;
+        }
+    }, []);
 
     return {
         appState,
@@ -44,54 +94,70 @@ export function useAuraCare() {
     };
 }
 
-/* ────────────────────────────────────
-   Shared processing helper
-──────────────────────────────────── */
-async function _processText(
-    userText: string,
+async function _processAudioBlob(
+    audioBlob: Blob,
+    tone: ToneLevel,
+    messages: Message[],
     setAppState: (s: AppState) => void,
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
-    tone: ToneLevel,
+    currentAudio: React.MutableRefObject<HTMLAudioElement | null>
 ) {
-    setAppState("processing");
-
-    const responsesByTone: Record<ToneLevel, string> = {
-        "gen-z":
-            "no fr, that sounds genuinely exhausting. you don't have to have it all figured out right now — i'm here. tell me more if you want.",
-        "balanced":
-            "It sounds like you're carrying a lot right now. That's completely understandable. Sometimes our minds just need a moment to breathe. You're not alone in this.",
-        "grounded":
-            "What you're feeling is real, and it matters. There's no need to rush through it. Take your time — I'm here to listen, without judgment.",
-    };
-
     try {
-        await new Promise((res) => setTimeout(res, 1600));
+        setAppState("transcribing");
 
-        const userMsg: Message = {
-            id: crypto.randomUUID(),
-            role: "user",
-            content: userText,
-            timestamp: new Date(),
-        };
-        const assistantMsg: Message = {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: responsesByTone[tone],
-            timestamp: new Date(),
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "audio.webm");
+        formData.append("tone", tone);
+        formData.append("messages", JSON.stringify(messages));
+
+        // Let's implement pseudo-stages while we wait for the fetch to resolve.
+        const stateTimer1 = setTimeout(() => setAppState("understanding"), 1500);
+        const stateTimer2 = setTimeout(() => setAppState("responding"), 3000);
+
+        const res = await fetch("/api/processVoice", {
+            method: "POST",
+            body: formData,
+        });
+
+        clearTimeout(stateTimer1);
+        clearTimeout(stateTimer2);
+
+        if (!res.ok) {
+            let errorText = res.statusText;
+            try {
+                const errData = await res.json();
+                errorText = errData.details || errData.error || errorText;
+            } catch {
+                errorText = await res.text();
+            }
+            throw new Error(`Pipeline failed: ${errorText}`);
+        }
+
+        const generatedText = decodeURIComponent(res.headers.get("X-Response-Text") || "I'm sorry, I couldn't respond.");
+        const userTranscript = decodeURIComponent(res.headers.get("X-User-Transcript") || "Audio message");
+        const audioBuffer = await res.arrayBuffer();
+
+        setMessages((prev) => [
+            ...prev,
+            { id: crypto.randomUUID(), role: "user", content: userTranscript, timestamp: new Date() },
+            { id: crypto.randomUUID(), role: "assistant", content: generatedText, timestamp: new Date() }
+        ]);
+
+        // Play audio
+        const blob = new Blob([audioBuffer], { type: "audio/wav" });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        currentAudio.current = audio;
+
+        audio.onended = () => {
+            setAppState("idle");
         };
 
-        setMessages((prev) => [...prev, userMsg, assistantMsg]);
-        speakText(responsesByTone[tone]);
+        await audio.play();
         setAppState("responded");
-    } catch {
+
+    } catch (e) {
+        console.error("Audio processing failed", e);
         setAppState("idle");
     }
-}
-
-function speakText(text: string) {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 0.9; u.pitch = 1.0; u.volume = 1.0;
-    window.speechSynthesis.speak(u);
 }

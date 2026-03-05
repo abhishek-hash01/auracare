@@ -29,7 +29,7 @@ interface MicButtonProps {
 
 export default function MicButton({ appState, tone, onMicPress }: MicButtonProps) {
     const isListening = appState === "listening";
-    const isProcessing = appState === "processing";
+    const isProcessing = ["transcribing", "understanding", "responding", "processing"].includes(appState);
     const isIdle = !isListening && !isProcessing;
 
     const { from, to } = TONE_COLORS[tone];
@@ -68,10 +68,10 @@ export default function MicButton({ appState, tone, onMicPress }: MicButtonProps
                     const angle = (i / 24) * 2 * Math.PI - Math.PI / 2;
                     const r0 = 105;
                     const barH = isListening ? LISTEN_H[i] : IDLE_H[i];
-                    const x1 = 150 + r0 * Math.cos(angle);
-                    const y1 = 150 + r0 * Math.sin(angle);
-                    const x2 = 150 + (r0 + barH) * Math.cos(angle);
-                    const y2 = 150 + (r0 + barH) * Math.sin(angle);
+                    const x1 = (150 + r0 * Math.cos(angle)).toFixed(3);
+                    const y1 = (150 + r0 * Math.sin(angle)).toFixed(3);
+                    const x2 = (150 + (r0 + barH) * Math.cos(angle)).toFixed(3);
+                    const y2 = (150 + (r0 + barH) * Math.sin(angle)).toFixed(3);
                     return (
                         <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
                             stroke={isListening ? "rgba(192,133,106,0.75)" : "rgba(139,111,71,0.26)"}
